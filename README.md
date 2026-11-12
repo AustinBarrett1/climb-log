@@ -51,3 +51,10 @@ clasp clone <SCRIPT_ID>        # Project Settings → Script ID
 - The **Climbs** tab is the database. Don't reorder its columns; add new ones at the end.
 - Photos are shared as "anyone with the link can view" so thumbnails load in the app.
 - Grade lists, climb types and colours can be customised at the top of the `<script>` in `Index.html`.
+
+### Making a change
+1. `clasp pull`: only needed if you edited in the browser editor
+2. Edit the files locally
+3. `clasp push`, then test at **Deploy → Test deployments**
+4. `git add . && git commit -m "what changed" && git push`
+5. When it's ready for the live app: `clasp create-deployment --deploymentId <ID> --description "vX"`
