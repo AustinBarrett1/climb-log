@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0f1419;--card:#1a2129;--line:#2a333d;--text:#e6edf3;--muted:#8b98a5;--accent:#f2b33d;--danger:#ef4444}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+button{cursor:pointer;font:inherit}
+header.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:rgba(15,20,25,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:18px}
+#sync{font-size:12px;color:var(--muted)}
+main{max-width:640px;margin:0 auto;padding:12px}
+.view{display:none}.view.active{display:block}
+h2.vt{font-size:20px;margin:6px 4px 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 2px;font-size:15px}
+.sub{margin:0 0 10px;font-size:12px;color:var(--muted)}
+.field{display:block;margin-bottom:14px}.field:last-child{margin-bottom:0}
+.field>span{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.field em{text-transform:none;font-style:normal;opacity:.7;letter-spacing:0}
+input,select,textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;font-size:16px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:999px;padding:8px 14px;display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#111;font-weight:600}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);padding:8px 4px;border-radius:8px}
+.seg button.on{background:var(--line);color:var(--text);font-weight:600}
+.entry{border-left:4px solid var(--accent)}
+.entry .dot{background:var(--accent)}
+.entry .chip.on{background:var(--accent);border-color:var(--accent)}
+.entry-head{font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.hint{margin:8px 0 12px;font-size:13px;color:var(--muted)}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stepper button{width:46px;height:42px;border:0;background:var(--bg);color:var(--text);font-size:20px}
+.stepper output{flex:1;text-align:center;font-size:18px;font-weight:700}
+.stars button{background:none;border:0;font-size:30px;color:var(--line);padding:0 3px}
+.stars button.on{color:var(--accent)}
+.photos{display:flex;flex-wrap:wrap;gap:8px}
+.ph,.addphoto{position:relative;width:84px;height:84px;border-radius:10px;overflow:hidden;background:var(--bg)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph.busy img{opacity:.4}
+.ph.err{outline:2px solid var(--danger)}
+.ph .x{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.7);color:#fff;line-height:1}
+.addphoto{display:flex;align-items:center;justify-content:center;border:2px dashed var(--line);color:var(--muted);font-size:30px;cursor:pointer}
+.spin{position:absolute;inset:0;margin:auto;width:24px;height:24px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.actions{display:flex;gap:10px;margin:4px 0 16px}
+button.primary{background:var(--accent);color:#111;border:0;border-radius:12px;padding:14px 22px;font-weight:700;flex:1}
+button.primary:disabled{opacity:.6}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.danger{color:var(--danger)!important;border-color:var(--danger)!important}
+.hidden{display:none!important}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav.tabs button{flex:1;background:none;border:0;color:var(--muted);padding:9px 0 11px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.tabs button b{font-size:20px;font-weight:400}
+nav.tabs button.on{color:var(--accent)}
+.day{margin:18px 4px 8px;color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.climb{display:flex;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:8px;color:inherit}
+.thumb{width:64px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:26px}
+.cbody{min-width:0;flex:1}
+.ctitle{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmeta{font-size:13px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.grade{display:inline-block;background:var(--accent);color:#111;font-weight:800;border-radius:6px;padding:1px 7px;font-size:13px;margin-right:4px}
+.res{font-weight:700;font-size:12px;padding:1px 7px;border-radius:6px;background:var(--line);color:var(--text)}
+.res-flash,.res-onsight{background:#14532d;color:#86efac}.res-send{background:#1e3a5f;color:#93c5fd}.res-project{background:#4a2c0a;color:#fdba74}
+.empty{text-align:center;color:var(--muted);padding:40px 0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));position:relative}
+.sheet h2{margin:0 40px 0 0;font-size:20px}
+.sheet .close{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;border:0;background:var(--line);color:var(--text);font-size:18px}
+.detailgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.detailgrid span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.gallery img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:zoom-in}
+.notes{white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:10px;margin:0 0 14px}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:20;display:flex;align-items:center;justify-content:center}
+#lightbox img{max-width:100%;max-height:100%}
+#toast{position:fixed;left:50%;bottom:92px;transform:translate(-50%,20px);background:#22303c;color:var(--text);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:30;max-width:90%;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}#toast.bad{background:#7f1d1d}
+table.h2h{width:100%;border-collapse:collapse;font-size:14px}
+.h2h th,.h2h td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}
+.h2h tr:last-child td{border-bottom:0}
+.h2h th:first-child,.h2h td:first-child{text-align:left;color:var(--muted);font-weight:400}
+.h2h th{white-space:nowrap}
+.h2h td.lead{color:var(--accent);font-weight:700}
+.chartbox{position:relative;height:240px}
+.nd{display:none;color:var(--muted);font-size:13px;padding:24px 0;text-align:center}
+.chartcard.nodata .chartbox{display:none}.chartcard.nodata .nd{display:block}
+</style>
+</head>
+<body>
+<header class="top"><h1>🧗 Climb Log</h1><span id="sync"></span></header>
+
+<main>
+  <!-- ============ LOG ============ -->
+  <section id="view-log" class="view active">
+    <h2 class="vt" id="formTitle">Log a climb</h2>
+    <form id="climbForm" autocomplete="off">
+      <div class="card">
+        <div class="row2">
+          <label class="field"><span>Date</span><input type="date" id="f-date" required></label>
+          <div class="field"><span>Setting</span>
+            <div class="seg" id="f-setting"><button type="button" data-v="Indoor">Indoor</button><button type="button" data-v="Outdoor">Outdoor</button></div>
+          </div>
+        </div>
+        <div class="field"><span>Who climbed it?</span><div class="chips" id="f-climbers"></div></div>
+        <label class="field"><span>Location</span><input id="f-location" list="locations" placeholder="Gym or crag"></label>
+        <datalist id="locations"></datalist>
+      </div>
+
+      <div class="card">
+        <div class="field"><span>Climb type</span><div class="chips" id="f-type"></div></div>
+        <label class="field"><span>Grade</span><select id="f-grade"></select></label>
+        <label class="field"><span>Route / problem name <em>(optional)</em></span><input id="f-route" placeholder="e.g. The Pink Crimper"></label>
+        <label class="field"><span>Wall / hold colour <em>(optional)</em></span><input id="f-wall" placeholder="e.g. Cave, yellow tape"></label>
+      </div>
+
+      <div id="f-entries"></div>
+
+      <div class="card">
+        <div class="field"><span>Rating</span><div class="stars" id="f-rating"></div></div>
+        <div class="field"><span>Photos</span>
+          <div class="photos" id="f-photos">
+            <label class="addphoto" title="Add photos">+<input type="file" accept="image/*" multiple id="f-file" hidden></label>
+          </div>
+        </div>
+        <label class="field"><span>Notes</span><textarea id="f-notes" rows="3" placeholder="Beta, conditions, how it felt…"></textarea></label>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="cancelEdit" class="ghost hidden">Cancel</button>
+        <button type="submit" id="saveBtn" class="primary">Save climb</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ HISTORY ============ -->
+  <section id="view-history" class="view">
+    <h2 class="vt">History</h2>
+    <div class="chips" id="h-climber" style="margin:0 4px 4px"></div>
+    <div id="historyList"></div>
+  </section>
+
+  <!-- ============ STATS ============ -->
+  <section id="view-stats" class="view">
+    <h2 class="vt">Stats</h2>
+    <div class="card">
+      <div class="field"><span>Climber</span><div class="chips" id="s-climber"></div></div>
+      <div class="row2">
+        <div class="field"><span>Discipline</span>
+          <div class="seg" id="s-disc"><button type="button" data-v="Boulder">Boulder</button><button type="button" data-v="Routes">Routes</button></div>
+        </div>
+        <div class="field"><span>Setting</span>
+          <div class="seg" id="s-setting"><button type="button" data-v="All">All</button><button type="button" data-v="Indoor">In</button><button type="button" data-v="Outdoor">Out</button></div>
+        </div>
+      </div>
+      <label class="field"><span>Time range</span>
+        <select id="s-range"><option value="all">All time</option><option value="365">Last 12 months</option><option value="90">Last 90 days</option><option value="30">Last 30 days</option></select>
+      </label>
+    </div>
+
+    <div class="card"><h3 id="s-table-title">Head to head</h3><p class="sub" id="s-table-sub"></p><div id="s-table"></div></div>
+
+    <div class="card chartcard"><h3>Grade pyramid</h3><p class="sub">Sends at each grade</p><div class="chartbox"><canvas id="c-pyramid"></canvas></div><p class="nd">No sends yet for this filter</p></div>
+    <div class="card chartcard"><h3>Progress</h3><p class="sub">Hardest send each month</p><div class="chartbox"><canvas id="c-progress"></canvas></div><p class="nd">No sends yet for this filter</p></div>
+    <div class="card chartcard"><h3>Falls by grade</h3><p class="sub">Average falls per climb</p><div class="chartbox"><canvas id="c-falls"></canvas></div><p class="nd">No climbs yet for this filter</p></div>
+    <div class="card chartcard"><h3>Activity</h3><p class="sub">Climbs logged per month (all disciplines)</p><div class="chartbox"><canvas id="c-activity"></canvas></div><p class="nd">No climbs yet for this filter</p></div>
+    <div class="card chartcard"><h3>Climb types</h3><p class="sub">Mix of climb types (all disciplines)</p><div class="chartbox"><canvas id="c-types"></canvas></div><p class="nd">No climbs yet for this filter</p></div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button type="button" data-v="log" class="on"><b>＋</b>Log</button>
+  <button type="button" data-v="history"><b>☰</b>History</button>
+  <button type="button" data-v="stats"><b>📈</b>Stats</button>
+</nav>
+
+<div id="modal" class="modal hidden"><div class="sheet"><button type="button" class="close" id="modalClose">✕</button><div id="modalBody"></div></div></div>
+<div id="lightbox" class="hidden"><img alt=""></div>
+<div id="toast"></div>
+
+<script>
+const CONFIG = <?!= config ?>;
+
+// ====== Lists you can customise ======
+const CLIMBERS = CONFIG.climbers;
+const COLORS = ['#38bdf8', '#fb923c', '#a78bfa', '#4ade80'];          // one per climber
+const TYPES = ['Boulder', 'Top Rope', 'Lead', 'Auto Belay', 'Trad'];
+const BOULDER_GRADES = ['VB','V0','V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14'];
+const ROUTE_GRADES = ['5.5','5.6','5.7','5.8','5.9'].concat(...['10','11','12','13','14'].map(n => ['a','b','c','d'].map(l => '5.' + n + l)));
+const RESULT_HELP = { Onsight: 'Sent first try with no beta', Flash: 'Sent first try', Send: 'Sent after some tries', Project: 'Not sent yet' };
+// =====================================
+
+const ALL = CLIMBERS.length === 2 ? 'Both' : 'All';
+const TYPE_COLORS = ['#f2b33d', '#38bdf8', '#fb923c', '#a78bfa', '#4ade80', '#f472b6'];
+const colorOf = n => COLORS[Math.max(0, CLIMBERS.indexOf(n)) % COLORS.length];
+const isBoulder = t => t === 'Boulder';
+const scaleFor = t => isBoulder(t) ? BOULDER_GRADES : ROUTE_GRADES;
+const resultsFor = t => isBoulder(t) ? ['Flash', 'Send', 'Project'] : ['Onsight', 'Flash', 'Send', 'Project'];
+const isSent = r => r && r !== 'Project';
+const isFirstGo = r => r === 'Flash' || r === 'Onsight';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const thumbUrl = (id, w) => 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + w;
+function call(fn, ...args) {
+  return new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
+}
+function toast(msg, bad) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'show' + (bad ? ' bad' : '');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = '', 2800);
+}
+function isoDay(d) { d = new Date(d); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+const today = () => isoDay(new Date());
+function fmtDay(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  if (isNaN(d)) return iso;
+  const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString(undefined, opts);
+}
+function fmtMonth(m) { const d = new Date(m + '-15T12:00:00'); return d.toLocaleDateString(undefined, { month: 'short', year: '2-digit' }); }
+
+// Generic chip row: opts → buttons, isOn(o) → bool, onTap(o)
+function chips(el, opts, isOn, onTap, label) {
+  label = label || (o => esc(o));
+  el.innerHTML = opts.map(o => `<button type="button" class="chip${isOn(o) ? ' on' : ''}" data-v="${esc(o)}">${label(o)}</button>`).join('');
+  el.onclick = e => { const b = e.target.closest('button'); if (b) onTap(b.dataset.v); };
+}
+function seg(el, value, onChange) {
+  el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === value));
+  el.onclick = e => { const b = e.target.closest('button'); if (b) { seg(el, b.dataset.v, onChange); onChange(b.dataset.v); } };
+}
+const climberLabel = c => `<i class="dot" style="background:${colorOf(c)}"></i>${esc(c)}`;
+
+// ================= STATE =================
+const state = { climbs: [], editingId: null, view: 'log' };
+const form = { date: today(), setting: 'Indoor', climbers: [CLIMBERS[0]], type: 'Boulder', grade: 'V2', rating: 0, photos: [], entries: {} };
+
+function loadPrefs() {
+  try {
+    const p = JSON.parse(localStorage.getItem('climbLogPrefs') || '{}');
+    if (p.setting) form.setting = p.setting;
+    if (TYPES.includes(p.type)) form.type = p.type;
+    if (Array.isArray(p.climbers) && p.climbers.every(c => CLIMBERS.includes(c)) && p.climbers.length) form.climbers = p.climbers;
+    if (p.grade && scaleFor(form.type).includes(p.grade)) form.grade = p.grade; else form.grade = isBoulder(form.type) ? 'V2' : '5.10a';
+    if (p.location) $('#f-location').value = p.location;
+  } catch (e) {}
+}
+function savePrefs() {
+  try {
+    localStorage.setItem('climbLogPrefs', JSON.stringify({ setting: form.setting, type: form.type, climbers: form.climbers, grade: form.grade, location: $('#f-location').value }));
+  } catch (e) {}
+}
+
+// ================= LOG FORM =================
+function renderForm() {
+  $('#f-date').value = form.date;
+  seg($('#f-setting'), form.setting, v => form.setting = v);
+  chips($('#f-climbers'), CLIMBERS, c => form.climbers.includes(c), c => {
+    if (state.editingId) form.climbers = [c];
+    else if (form.climbers.includes(c)) { if (form.climbers.length > 1) form.climbers = form.climbers.filter(x => x !== c); }
+    else form.climbers = CLIMBERS.filter(x => x === c || form.climbers.includes(x));
+    renderForm();
+  }, climberLabel);
+  chips($('#f-type'), TYPES, t => t === form.type, t => {
+    form.type = t;
+    if (!scaleFor(t).includes(form.grade)) form.grade = isBoulder(t) ? 'V2' : '5.10a';
+    renderForm();
+  });
+  const sc = scaleFor(form.type);
+  if (!sc.includes(form.grade)) form.grade = sc[0];
+  $('#f-grade').innerHTML = sc.map(g => `<option${g === form.grade ? ' selected' : ''}>${g}</option>`).join('');
+  renderEntries(); renderStars(); renderPhotos();
+}
+
+function stepper(label, key, val, min) {
+  return `<div class="field"><span>${label}</span><div class="stepper">
+    <button type="button" data-act="dec" data-k="${key}" data-min="${min}">−</button><output>${val}</output>
+    <button type="button" data-act="inc" data-k="${key}">+</button></div></div>`;
+}
+function renderEntries() {
+  const results = resultsFor(form.type);
+  form.climbers.forEach(c => {
+    if (!form.entries[c]) form.entries[c] = { result: 'Send', attempts: 1, falls: 0 };
+    if (!results.includes(form.entries[c].result)) form.entries[c].result = 'Flash';
+  });
+  $('#f-entries').innerHTML = form.climbers.map(c => {
+    const e = form.entries[c];
+    return `<div class="card entry" data-c="${esc(c)}" style="--accent:${colorOf(c)}">
+      <div class="entry-head"><i class="dot"></i>${esc(c)}</div>
+      <div class="chips">${results.map(r => `<button type="button" class="chip${e.result === r ? ' on' : ''}" data-act="result" data-v="${r}">${r}</button>`).join('')}</div>
+      <p class="hint">${RESULT_HELP[e.result] || ''}</p>
+      <div class="row2">${stepper('Attempts', 'attempts', e.attempts, 1)}${stepper('Falls', 'falls', e.falls, 0)}</div>
+    </div>`;
+  }).join('');
+}
+$('#f-entries').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-act]'); if (!b) return;
+  const en = form.entries[b.closest('.entry').dataset.c];
+  const act = b.dataset.act, k = b.dataset.k;
+  if (act === 'result') {
+    en.result = b.dataset.v;
+    if (isFirstGo(en.result)) { en.attempts = 1; en.falls = 0; }
+  } else if (act === 'inc') {
+    en[k]++;
+    if (isFirstGo(en.result) && (en.attempts > 1 || en.falls > 0)) en.result = 'Send';
+  } else if (act === 'dec') {
+    en[k] = Math.max(+b.dataset.min, en[k] - 1);
+  }
+  renderEntries();
+});
+
+function renderStars() {
+  $('#f-rating').innerHTML = [1, 2, 3, 4, 5].map(i => `<button type="button" data-v="${i}" class="${i <= form.rating ? 'on' : ''}">★</button>`).join('');
+}
+$('#f-rating').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const v = +b.dataset.v; form.rating = form.rating === v ? 0 : v; renderStars();
+});
+
+// ---- Photos ----
+function renderPhotos() {
+  const el = $('#f-photos'), add = el.querySelector('.addphoto');
+  el.querySelectorAll('.ph').forEach(n => n.remove());
+  form.photos.forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'ph' + (p.uploading ? ' busy' : '') + (p.error ? ' err' : '');
+    d.innerHTML = `<img src="${esc(p.preview)}" alt=""><button type="button" class="x" data-k="${p.key}">✕</button>${p.uploading ? '<span class="spin"></span>' : ''}`;
+    el.insertBefore(d, add);
+  });
+}
+function compressImage(file, maxDim = 1600, quality = 0.8) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("Couldn't read that image")); };
+    img.src = url;
+  });
+}
+$('#f-file').addEventListener('change', async e => {
+  const files = [...e.target.files]; e.target.value = '';
+  for (const f of files) {
+    try {
+      const dataUrl = await compressImage(f);
+      const p = { key: Math.random().toString(36).slice(2), id: null, preview: dataUrl, uploading: true, isNew: true };
+      form.photos.push(p); renderPhotos();
+      p.promise = call('uploadPhoto', dataUrl, f.name)
+        .then(id => { p.id = id; p.uploading = false; renderPhotos(); })
+        .catch(err => { p.uploading = false; p.error = true; renderPhotos(); toast('Photo upload failed: ' + (err.message || err), true); });
+    } catch (err) { toast(err.message, true); }
+  }
+});
+$('#f-photos').addEventListener('click', e => {
+  const b = e.target.closest('.x'); if (!b) return;
+  const p = form.photos.find(x => x.key === b.dataset.k); if (!p) return;
+  form.photos = form.photos.filter(x => x !== p);
+  if (p.isNew) {
+    if (p.id) call('discardPhoto', p.id).catch(() => {});
+    else if (p.promise) p.promise.then(() => p.id && call('discardPhoto', p.id).catch(() => {}));
+  }
+  renderPhotos();
+});
+
+$('#f-date').addEventListener('change', e => form.date = e.target.value);
+$('#f-grade').addEventListener('change', e => form.grade = e.target.value);
+
+function resetForm(discardNew) {
+  if (discardNew) form.photos.filter(p => p.isNew && p.id).forEach(p => call('discardPhoto', p.id).catch(() => {}));
+  const wasEditing = !!state.editingId;
+  state.editingId = null;
+  form.photos = []; form.rating = 0; form.entries = {};
+  ['#f-route', '#f-wall', '#f-notes'].forEach(s => $(s).value = '');
+  if (wasEditing) { form.date = today(); loadPrefs(); }
+  $('#formTitle').textContent = 'Log a climb';
+  $('#saveBtn').textContent = 'Save climb';
+  $('#cancelEdit').classList.add('hidden');
+  renderForm();
+}
+$('#cancelEdit').addEventListener('click', () => { resetForm(true); showView('history'); });
+
+$('#climbForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!form.climbers.length) return toast('Pick who climbed it', true);
+  const btn = $('#saveBtn'), editing = state.editingId;
+  btn.disabled = true; btn.textContent = form.photos.some(p => p.uploading) ? 'Uploading photos…' : 'Saving…';
+  try {
+    await Promise.all(form.photos.filter(p => p.promise).map(p => p.promise));
+    if (form.photos.some(p => p.error)) throw new Error('Remove the photo that failed, then save again');
+    const payload = {
+      date: $('#f-date').value, setting: form.setting, type: form.type, grade: $('#f-grade').value,
+      location: $('#f-location').value, route: $('#f-route').value, wall: $('#f-wall').value,
+      notes: $('#f-notes').value, rating: form.rating,
+      photoIds: form.photos.map(p => p.id).filter(Boolean),
+      entries: form.climbers.map(c => Object.assign({ climber: c }, form.entries[c]))
+    };
+    if (editing) {
+      await call('updateClimb', editing, payload);
+      toast('Climb updated');
+    } else {
+      const n = await call('saveClimbs', payload);
+      toast(n > 1 ? `Saved for ${n} climbers 💪` : 'Climb saved 💪');
+      savePrefs();
+    }
+    resetForm(false);
+    await loadClimbs();
+    if (editing) showView('history');
+  } catch (err) {
+    toast(err.message || String(err), true);
+  } finally {
+    btn.disabled = false; btn.textContent = state.editingId ? 'Update climb' : 'Save climb';
+  }
+});
+
+function startEdit(c) {
+  state.editingId = c.id;
+  Object.assign(form, {
+    date: c.date, setting: c.setting || 'Indoor', climbers: [c.climber], type: TYPES.includes(c.type) ? c.type : 'Boulder',
+    grade: c.grade, rating: c.rating,
+    photos: c.photoIds.map(id => ({ key: id, id, preview: thumbUrl(id, 300) })),
+    entries: { [c.climber]: { result: c.result || 'Send', attempts: c.attempts || 1, falls: c.falls } }
+  });
+  $('#f-location').value = c.location; $('#f-route').value = c.route; $('#f-wall').value = c.wall; $('#f-notes').value = c.notes;
+  $('#formTitle').textContent = 'Edit climb';
+  $('#saveBtn').textContent = 'Update climb';
+  $('#cancelEdit').classList.remove('hidden');
+  closeModal(); renderForm(); showView('log');
+}
+
+// ================= HISTORY =================
+const hf = { climber: ALL };
+const sortClimbs = arr => [...arr].sort((a, b) => b.date.localeCompare(a.date) || b.loggedAt.localeCompare(a.loggedAt));
+
+function climbCard(c) {
+  const thumb = c.photoIds[0]
+    ? `<img class="thumb" loading="lazy" src="${thumbUrl(c.photoIds[0], 200)}" alt="">`
+    : `<div class="thumb">${isBoulder(c.type) ? '🪨' : '🧗'}</div>`;
+  const r = c.result || '—';
+  return `<button type="button" class="climb" data-id="${esc(c.id)}">${thumb}
+    <div class="cbody">
+      <div class="ctitle"><span class="grade">${esc(c.grade)}</span>${esc(c.route || c.wall || c.type)}</div>
+      <div class="cmeta"><i class="dot" style="background:${colorOf(c.climber)}"></i>${esc(c.climber)} · ${esc(c.type)} · ${esc(c.setting)}${c.location ? ' · ' + esc(c.location) : ''}</div>
+      <div class="cmeta"><span class="res res-${esc(r.toLowerCase())}">${esc(r)}</span>${c.attempts} att · ${c.falls} fall${c.falls === 1 ? '' : 's'}${c.rating ? ' · ' + '★'.repeat(c.rating) : ''}${c.photoIds.length > 1 ? ' · 📷' + c.photoIds.length : ''}</div>
+    </div></button>`;
+}
+function renderHistory() {
+  chips($('#h-climber'), [ALL, ...CLIMBERS], v => v === hf.climber, v => { hf.climber = v; renderHistory(); },
+    v => v === ALL ? esc(v) : climberLabel(v));
+  const list = sortClimbs(state.climbs).filter(c => hf.climber === ALL || c.climber === hf.climber);
+  if (!list.length) { $('#historyList').innerHTML = '<p class="empty">No climbs yet. Go send something!</p>'; return; }
+  let html = '', cur = '';
+  list.forEach(c => {
+    if (c.date !== cur) { cur = c.date; html += `<h4 class="day">${esc(fmtDay(c.date))}</h4>`; }
+    html += climbCard(c);
+  });
+  $('#historyList').innerHTML = html;
+}
+$('#historyList').addEventListener('click', e => { const b = e.target.closest('.climb'); if (b) openDetail(b.dataset.id); });
+
+const drow = (k, v) => (v === '' || v == null || v === 0 && k === 'Rating') ? '' : `<div><span>${k}</span><b>${esc(v)}</b></div>`;
+function openDetail(id) {
+  const c = state.climbs.find(x => x.id === id); if (!c) return;
+  $('#modalBody').innerHTML = `
+    <h2><span class="grade">${esc(c.grade)}</span>${esc(c.route || 'Unnamed climb')}</h2>
+    <div class="detailgrid">
+      ${drow('Climber', c.climber)}${drow('Date', fmtDay(c.date))}${drow('Type', c.type)}${drow('Setting', c.setting)}
+      ${drow('Location', c.location)}${drow('Wall / colour', c.wall)}${drow('Result', c.result)}${drow('Attempts', c.attempts)}
+      ${drow('Falls', c.falls)}${drow('Rating', c.rating ? '★'.repeat(c.rating) : '')}
+    </div>
+    ${c.photoIds.length ? `<div class="gallery">${c.photoIds.map(p => `<img src="${thumbUrl(p, 400)}" data-id="${esc(p)}" loading="lazy" alt="">`).join('')}</div>` : ''}
+    ${c.notes ? `<p class="notes">${esc(c.notes)}</p>` : ''}
+    <div class="actions"><button type="button" class="ghost danger" id="delBtn">Delete</button><button type="button" class="primary" id="editBtn">Edit</button></div>`;
+  $('#modal').classList.remove('hidden');
+  $('#editBtn').onclick = () => startEdit(c);
+  const del = $('#delBtn');
+  del.onclick = async () => {
+    if (!del.dataset.armed) { del.dataset.armed = '1'; del.textContent = 'Tap again to delete'; return; }
+    del.disabled = true; del.textContent = 'Deleting…';
+    try { await call('deleteClimb', c.id); closeModal(); toast('Climb deleted'); await loadClimbs(); }
+    catch (err) { toast(err.message || String(err), true); del.disabled = false; }
+  };
+  $('#modalBody').querySelectorAll('.gallery img').forEach(img => img.onclick = () => {
+    $('#lightbox img').src = thumbUrl(img.dataset.id, 1600); $('#lightbox').classList.remove('hidden');
+  });
+}
+function closeModal() { $('#modal').classList.add('hidden'); }
+$('#modalClose').onclick = closeModal;
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+$('#lightbox').onclick = () => { $('#lightbox').classList.add('hidden'); $('#lightbox img').src = ''; };
+
+// ================= STATS =================
+const sf = { climber: ALL, disc: 'Boulder', setting: 'All', range: 'all' };
+const charts = {};
+if (window.Chart) {
+  Chart.defaults.color = '#8b98a5';
+  Chart.defaults.borderColor = 'rgba(139,152,165,.15)';
+  Chart.defaults.font.family = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.plugins.legend.labels.boxWidth = 12;
+}
+function drawChart(id, cfg, hasData) {
+  const card = document.getElementById(id).closest('.chartcard');
+  card.classList.toggle('nodata', !hasData);
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  if (!hasData) return;
+  if (!window.Chart) { card.classList.add('nodata'); card.querySelector('.nd').textContent = "Charts couldn't load (no connection to the chart library)"; return; }
+  charts[id] = new Chart(document.getElementById(id), cfg);
+}
+function monthSpan(dates) {
+  if (!dates.length) return [];
+  const sorted = [...dates].sort();
+  let [y, m] = sorted[0].slice(0, 7).split('-').map(Number);
+  const end = sorted[sorted.length - 1].slice(0, 7), out = [];
+  for (let i = 0; i < 240; i++) {
+    const key = y + '-' + String(m).padStart(2, '0');
+    out.push(key);
+    if (key >= end) break;
+    m++; if (m > 12) { m = 1; y++; }
+  }
+  return out;
+}
+function inRange(date) {
+  if (sf.range === 'all') return true;
+  const d = new Date(); d.setDate(d.getDate() - Number(sf.range));
+  return date >= isoDay(d);
+}
+const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '—';
+
+function renderStats() {
+  chips($('#s-climber'), [ALL, ...CLIMBERS], v => v === sf.climber, v => { sf.climber = v; renderStats(); },
+    v => v === ALL ? esc(v) : climberLabel(v));
+  seg($('#s-disc'), sf.disc, v => { sf.disc = v; renderStats(); });
+  seg($('#s-setting'), sf.setting, v => { sf.setting = v; renderStats(); });
+  $('#s-range').value = sf.range;
+
+  const scale = sf.disc === 'Boulder' ? BOULDER_GRADES : ROUTE_GRADES;
+  const gi = c => scale.indexOf(c.grade);
+  const people = sf.climber === ALL ? CLIMBERS : [sf.climber];
+  const base = state.climbs.filter(c => people.includes(c.climber) && (sf.setting === 'All' || c.setting === sf.setting) && inRange(c.date));
+  const disc = base.filter(c => (sf.disc === 'Boulder') === isBoulder(c.type) && gi(c) >= 0);
+  const sends = disc.filter(c => isSent(c.result));
+  const byP = (arr, p) => arr.filter(c => c.climber === p);
+
+  // ---- Head-to-head table ----
+  const metrics = [
+    ['Climbs logged', p => byP(disc, p).length, true],
+    ['Sends', p => byP(sends, p).length, true],
+    ['Send rate', p => pct(byP(sends, p).length, byP(disc, p).length)],
+    ['Hardest send', p => { const g = byP(sends, p).map(gi); return g.length ? scale[Math.max(...g)] : '—'; }, true, p => { const g = byP(sends, p).map(gi); return g.length ? Math.max(...g) : -1; }],
+    [sf.disc === 'Boulder' ? 'Flashes' : 'Flashes / onsights', p => byP(sends, p).filter(c => isFirstGo(c.result)).length, true],
+    ['Total falls', p => byP(disc, p).reduce((s, c) => s + c.falls, 0)],
+    ['Falls per climb', p => { const a = byP(disc, p); return a.length ? (a.reduce((s, c) => s + c.falls, 0) / a.length).toFixed(1) : '—'; }],
+    ['Sessions', p => new Set(byP(base, p).map(c => c.date)).size, true],
+    ['Indoor / outdoor', p => byP(base, p).filter(c => c.setting === 'Indoor').length + ' / ' + byP(base, p).filter(c => c.setting === 'Outdoor').length],
+    ['Top location', p => { const m = {}; byP(base, p).forEach(c => { if (c.location) m[c.location] = (m[c.location] || 0) + 1; }); const k = Object.keys(m).sort((a, b) => m[b] - m[a])[0]; return k || '—'; }]
+  ];
+  $('#s-table-title').textContent = people.length > 1 ? 'Head to head' : 'Summary';
+  $('#s-table-sub').textContent = (sf.disc === 'Boulder' ? 'Bouldering' : 'Roped climbs') + ' · ' + $('#s-range').selectedOptions[0].text.toLowerCase();
+  $('#s-table').innerHTML = `<table class="h2h"><tr><th></th>${people.map(p => `<th>${climberLabel(p)}</th>`).join('')}</tr>` +
+    metrics.map(([name, fn, compare, rank]) => {
+      const vals = people.map(fn), nums = people.map(rank || fn);
+      const max = Math.max(...nums);
+      const leader = compare && people.length > 1 && max > 0 && nums.filter(n => n === max).length === 1;
+      return `<tr><td>${esc(name)}</td>${vals.map((v, i) => `<td class="${leader && nums[i] === max ? 'lead' : ''}">${esc(v)}</td>`).join('')}</tr>`;
+    }).join('') + '</table>';
+
+  const ds = (p, data, extra) => Object.assign({ label: p, data, backgroundColor: colorOf(p), borderColor: colorOf(p), borderRadius: 4 }, extra || {});
+  const legend = { display: people.length > 1 };
+
+  // ---- Grade pyramid ----
+  if (sends.length) {
+    const idx = sends.map(gi), lo = Math.min(...idx), hi = Math.max(...idx);
+    const labels = scale.slice(lo, hi + 1).reverse();
+    drawChart('c-pyramid', {
+      type: 'bar',
+      data: { labels, datasets: people.map(p => ds(p, labels.map(g => byP(sends, p).filter(c => c.grade === g).length))) },
+      options: { indexAxis: 'y', plugins: { legend }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } } }
+    }, true);
+  } else drawChart('c-pyramid', null, false);
+
+  // ---- Progress (hardest send per month) ----
+  if (sends.length) {
+    const months = monthSpan(sends.map(c => c.date));
+    const idx = sends.map(gi), lo = Math.min(...idx), hi = Math.max(...idx);
+    drawChart('c-progress', {
+      type: 'line',
+      data: { labels: months.map(fmtMonth), datasets: people.map(p => ds(p, months.map(m => {
+        const g = byP(sends, p).filter(c => c.date.startsWith(m)).map(gi); return g.length ? Math.max(...g) : null;
+      }), { spanGaps: true, tension: .3, pointRadius: 4, borderRadius: 0 })) },
+      options: { plugins: { legend, tooltip: { callbacks: { label: x => x.dataset.label + ': ' + scale[x.parsed.y] } } },
+        scales: { y: { min: Math.max(0, lo - 1), max: Math.min(scale.length - 1, hi + 1), ticks: { stepSize: 1, callback: v => scale[v] || '' } } } }
+    }, true);
+  } else drawChart('c-progress', null, false);
+
+  // ---- Falls by grade ----
+  if (disc.length) {
+    const idx = disc.map(gi), labels = scale.slice(Math.min(...idx), Math.max(...idx) + 1);
+    drawChart('c-falls', {
+      type: 'bar',
+      data: { labels, datasets: people.map(p => ds(p, labels.map(g => {
+        const a = byP(disc, p).filter(c => c.grade === g); return a.length ? +(a.reduce((s, c) => s + c.falls, 0) / a.length).toFixed(2) : null;
+      }))) },
+      options: { plugins: { legend }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+    }, true);
+  } else drawChart('c-falls', null, false);
+
+  // ---- Activity per month ----
+  if (base.length) {
+    const months = monthSpan(base.map(c => c.date));
+    drawChart('c-activity', {
+      type: 'bar',
+      data: { labels: months.map(fmtMonth), datasets: people.map(p => ds(p, months.map(m => byP(base, p).filter(c => c.date.startsWith(m)).length))) },
+      options: { plugins: { legend }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } } }
+    }, true);
+  } else drawChart('c-activity', null, false);
+
+  // ---- Type mix ----
+  if (base.length) {
+    const types = [...new Set(base.map(c => c.type))];
+    drawChart('c-types', {
+      type: 'doughnut',
+      data: { labels: types, datasets: [{ data: types.map(t => base.filter(c => c.type === t).length), backgroundColor: types.map((t, i) => TYPE_COLORS[Math.max(0, TYPES.indexOf(t)) % TYPE_COLORS.length] || TYPE_COLORS[i % TYPE_COLORS.length]), borderColor: '#1a2129', borderWidth: 3 }] },
+      options: { cutout: '60%', plugins: { legend: { position: 'right' } } }
+    }, true);
+  } else drawChart('c-types', null, false);
+}
+$('#s-range').addEventListener('change', e => { sf.range = e.target.value; renderStats(); });
+
+// ================= NAV / LOAD =================
+function showView(v) {
+  state.view = v;
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  if (v === 'history') renderHistory();
+  if (v === 'stats') renderStats();
+  window.scrollTo(0, 0);
+}
+document.querySelector('nav.tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showView(b.dataset.v); });
+
+async function loadClimbs() {
+  $('#sync').textContent = 'Syncing…';
+  try {
+    state.climbs = await call('getClimbs');
+    const locs = [...new Set(state.climbs.map(c => c.location).filter(Boolean))].sort();
+    $('#locations').innerHTML = locs.map(l => `<option value="${esc(l)}">`).join('');
+    if (state.view === 'history') renderHistory();
+    if (state.view === 'stats') renderStats();
+    $('#sync').textContent = state.climbs.length + ' climbs';
+  } catch (err) {
+    $('#sync').textContent = 'Offline?';
+    toast('Could not load climbs: ' + (err.message || err), true);
+  }
+}
+
+loadPrefs();
+renderForm();
+loadClimbs();
+</script>
+</body>
+</html>

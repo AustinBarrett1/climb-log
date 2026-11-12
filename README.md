@@ -51,4 +51,3 @@ clasp clone <SCRIPT_ID>        # Project Settings → Script ID
 - The **Climbs** tab is the database. Don't reorder its columns; add new ones at the end.
 - Photos are shared as "anyone with the link can view" so thumbnails load in the app.
 - Grade lists, climb types and colours can be customised at the top of the `<script>` in `Index.html`.
-# climb-log
